@@ -12,7 +12,7 @@
 # @link ad5001.eu
 
 namespace Ad5001\HideAndSeek;
-
+ 
 use pocketmine\Server;
 use pocketmine\Player;
 use pocketmine\level\Level;
