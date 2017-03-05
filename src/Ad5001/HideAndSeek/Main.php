@@ -36,7 +36,7 @@ class Main extends PluginBase implements Listener {
         //Database setup
         $this->db = new DataBase($this->getDatafolder() . "base.db");
         if($this->db->query("PRAGMA table_info(Games);")->num_rows == 0) {
-            $this->db->query(<<<A
+            $this->db->exec(<<<A
 CREATE TABLE Games (
     name VARCHAR( 128 ) NOT NULL,
     spawnpoint VARCHAR( 128 ) NOT NULL,
@@ -44,7 +44,8 @@ CREATE TABLE Games (
     max_players INT NOT NULL,
     waiting_time INT NOT NULL,
     seek_time INT NOT NULL,
-    seekers_percentage INT NOT NULL
+    seekers_percentage INT NOT NULL,
+    Id INT PRIMARY KEY
 )
 A
 );
@@ -70,14 +71,14 @@ A
                        case "creategame":
                        case "addgame":
                        if($sender->getLevel()->getName() == $this->getLobbyWorld()->getName()) {
-                           $sender->sendMessage(self::PREFIX . "§4Could not create game ! You're in the lobby level.");
+                           $sender->sendMessage(self::PREFIX . "§cCould not create game ! You're in the lobby level.");
                            return true;
                        } elseif(!is_null($this->getGameManager()->getGameByLevel($sender->getLevel()))) {
-                           $sender->sendMessage(self::PREFIX . "§4This level is already an hide and seek game.");
+                           $sender->sendMessage(self::PREFIX . "§cThis level is already an hide and seek game.");
                            return true;
                        } else {
-                           $this->getGameManager()[] = new Game($sender->getLevel());
-                           $sender->sendMessage(self::PREFIX . "§4Succefully created hide and seek game in level {$sender->getLevel()->getName()}.");
+                           $this->getGameManager()->hey = new Game($sender->getLevel()); // Doesn't care 'bout the name set. It customùly sets it.
+                           $sender->sendMessage(self::PREFIX . "§cSuccefully created hide and seek game in level {$sender->getLevel()->getName()}.");
                            return true;
                        }
                        break;
@@ -85,11 +86,11 @@ A
                        case "delgame":
                        $game = $this->getGameManager()->getGameByLevel($sender->getLevel());
                        if(!is_null($game)) {
-                           unset($this->getGameManager()[$sender->getLevel()->getName()]);
-                           $sender->sendMessage(self::PREFIX . "§4Succefully deleted hide and seek game in level {$sender->getLevel()->getName()}.");
+                           unset($this->getGameManager()->{$sender->getLevel()->getName()});
+                           $sender->sendMessage(self::PREFIX . "§cSuccefully deleted hide and seek game in level {$sender->getLevel()->getName()}.");
                            return true;
                        } else {
-                           $sender->sendMessage(self::PREFIX . "§4You're not in an hide and seek game world.");
+                           $sender->sendMessage(self::PREFIX . "§cYou're not in an hide and seek game world.");
                        }
                        break;
                        case "setmaxplayers":
@@ -98,13 +99,13 @@ A
                        if(!is_null($game)) {
                            if(isset($args[1]) && is_int($args[1]) && $args[1] > 1) {
                                $game->setMaxPlayers($args[1]);
-                               $sender->sendMessage(self::PREFIX . "§4Succefully set maximum amount of players of hide and seek game in level {$sender->getLevel()->getName()} to {$args[1]}.");
+                               $sender->sendMessage(self::PREFIX . "§cSuccefully set maximum amount of players of hide and seek game in level {$sender->getLevel()->getName()} to {$args[1]}.");
                            } else {
-                               $sender->sendMessage("§4Usage: /hideandseek setmaxplayers <max amount>");
+                               $sender->sendMessage("§cUsage: /hideandseek setmaxplayers <max amount>");
                            }
                            return true;
                        } else {
-                           $sender->sendMessage(self::PREFIX . "§4You're not in an hide and seek game world.");
+                           $sender->sendMessage(self::PREFIX . "§cYou're not in an hide and seek game world.");
                        }
                        break;
                        case "setseekerspercentage":
@@ -113,13 +114,13 @@ A
                        if(!is_null($game)) {
                            if(isset($args[1]) && is_int($args[1]) && $args[1] > 0 && $args[1] < 100) {
                                $game->setSeekersPercentage($args[1]);
-                               $sender->sendMessage(self::PREFIX . "§4Succefully set seekers percentage of hide and seek game in level {$sender->getLevel()->getName()} to {$args[1]}.");
+                               $sender->sendMessage(self::PREFIX . "§cSuccefully set seekers percentage of hide and seek game in level {$sender->getLevel()->getName()} to {$args[1]}.");
                            } else {
-                               $sender->sendMessage("§4Usage: /hideandseek setseekerspercentage <percentage>");
+                               $sender->sendMessage("§cUsage: /hideandseek setseekerspercentage <percentage>");
                            }
                            return true;
                        } else {
-                           $sender->sendMessage(self::PREFIX . "§4You're not in an hide and seek game world.");
+                           $sender->sendMessage(self::PREFIX . "§cYou're not in an hide and seek game world.");
                        }
                        break;
                        case "setwaitingtime":
@@ -129,13 +130,13 @@ A
                        if(!is_null($game)) {
                            if(isset($args[1]) && is_int($args[1]) && $args[1] > 0) {
                                $game->setWaitTime($args[1]);
-                               $sender->sendMessage(self::PREFIX . "§4Succefully set waiting time of hide and seek game in level {$sender->getLevel()->getName()} to {$args[1]}.");
+                               $sender->sendMessage(self::PREFIX . "§cSuccefully set waiting time of hide and seek game in level {$sender->getLevel()->getName()} to {$args[1]}.");
                            } else {
-                               $sender->sendMessage("§4Usage: /hideandseek setwaittime <seconds to wait>");
+                               $sender->sendMessage("§cUsage: /hideandseek setwaittime <seconds to wait>");
                            }
                            return true;
                        } else {
-                           $sender->sendMessage(self::PREFIX . "§4You're not in an hide and seek game world.");
+                           $sender->sendMessage(self::PREFIX . "§cYou're not in an hide and seek game world.");
                        }
                        break;
                        case "setseektime":
@@ -144,13 +145,13 @@ A
                        if(!is_null($game)) {
                            if(isset($args[1]) && is_int($args[1]) && $args[1] > 0) {
                                $game->setSeekTime($args[1]);
-                               $sender->sendMessage(self::PREFIX . "§4Succefully set seeking time of hide and seek game in level {$sender->getLevel()->getName()} to {$args[1]}.");
+                               $sender->sendMessage(self::PREFIX . "§cSuccefully set seeking time of hide and seek game in level {$sender->getLevel()->getName()} to {$args[1]}.");
                            } else {
-                               $sender->sendMessage("§4Usage: /hideandseek setseektime <minutes of seeking>");
+                               $sender->sendMessage("§cUsage: /hideandseek setseektime <minutes of seeking>");
                            }
                            return true;
                        } else {
-                           $sender->sendMessage(self::PREFIX . "§4You're not in an hide and seek game world.");
+                           $sender->sendMessage(self::PREFIX . "§cYou're not in an hide and seek game world.");
                        }
                        break;
                        case "setspawn":
@@ -158,23 +159,11 @@ A
                        $pos = new \pocketmine\math\Vector3($sender->x, $sender->y, $sender->z);
                        $game = $this->getGameManager()->getGameByLevel($sender->getLevel());
                        if(!is_null($game)) {
-                           $game->setSpawn($args[1]);
-                           $sender->sendMessage(self::PREFIX . "§4Succefully set spawn of hide and seek game in level {$sender->getLevel()->getName()} to x: $pos->x, y: $pos->y, z: $pos->z.");
+                           $game->setSpawn($pos);
+                           $sender->sendMessage(self::PREFIX . "§cSuccefully set spawn of hide and seek game in level {$sender->getLevel()->getName()} to x: $pos->x, y: $pos->y, z: $pos->z.");
                            return true;
                        } else {
-                           $sender->sendMessage(self::PREFIX . "§4You're not in an hide and seek game world.");
-                       }
-                       break;
-                       case "setspawn":
-                       case "ss":
-                       $pos = new \pocketmine\math\Vector3($sender->x, $sender->y, $sender->z);
-                       $game = $this->getGameManager()->getGameByLevel($sender->getLevel());
-                       if(!is_null($game)) {
-                           $game->setSpawn($args[1]);
-                           $sender->sendMessage(self::PREFIX . "§4Succefully set spawn of hide and seek game in level {$sender->getLevel()->getName()} to x: $pos->x, y: $pos->y, z: $pos->z.");
-                           return true;
-                       } else {
-                           $sender->sendMessage(self::PREFIX . "§4You're not in an hide and seek game world.");
+                           $sender->sendMessage(self::PREFIX . "§cYou're not in an hide and seek game world.");
                        }
                        break;
                        case "setseekersspawn":
@@ -182,13 +171,25 @@ A
                        $pos = new \pocketmine\math\Vector3($sender->x, $sender->y, $sender->z);
                        $game = $this->getGameManager()->getGameByLevel($sender->getLevel());
                        if(!is_null($game)) {
-                           $game->setSeekersSpawn($args[1]);
-                           $sender->sendMessage(self::PREFIX . "§4Succefully set seekers spawn of hide and seek game in level {$sender->getLevel()->getName()} to x: $pos->x, y: $pos->y, z: $pos->z.");
+                           $game->setSeekersSpawn($pos);
+                           $sender->sendMessage(self::PREFIX . "§cSuccefully set seekers spawn of hide and seek game in level {$sender->getLevel()->getName()} to x: $pos->x, y: $pos->y, z: $pos->z.");
                            return true;
                        } else {
-                           $sender->sendMessage(self::PREFIX . "§4You're not in an hide and seek game world.");
+                           $sender->sendMessage(self::PREFIX . "§cYou're not in an hide and seek game world.");
                        }
                        break;
+                       default:
+                       $sender->sendMessage(str_ireplace(PHP_EOL, PHP_EOL . self::PREFIX,self::PREFIX. "§cSub-command {$args[0]} not found !
+Possible subcommands:
+- creategame (or addgame): Creates a hide and seek
+- deletegame (or delgame): Deletes the hide and seek
+- setmaxplayers <number of players>(or smp): Sets the maximum number of players 
+- setseekerspercentage <percentage>(or ssp): Sets the percentage of players that will be seekers 
+- setwaittime <seconds to wait>(or swt): Sets the waiting time of players when 75 percents of the maximum players joined and the game starts
+- setseektime <minutes to seek>(or sst): Sets the time seekers have to find all hiders before hiders wins
+- setspawn(or ss): Sets the spawn of the place players will wait, hide, and seek
+- setseekersspawn(or sss): Sets the place where players will be tped to while hiders are hiding
+Please note that all those subcommands are relative to the world where you execute the command in."));
                    }
                    return true;
                } else {
@@ -279,6 +280,6 @@ A
     @param     $event    \pocketmine\event\level\LevelLoadEvent
     */
     public function onLevelLoad(\pocketmine\event\level\LevelLoadEvent $event) {
-        $this->getGameManager()->refreshRegisterGames();
+        $this->getGameManager()->refreshRegisterGames($this->getDatabase());
     }
 }

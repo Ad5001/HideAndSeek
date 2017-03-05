@@ -31,8 +31,7 @@ class DataBase extends SQLite3 {
         $table = $data["table"];
         unset($data["table"]);
         $str = $this->buildQueryArgs($data);
-        $result = $this->query("SELECT $dataToGet FROM $table WHERE $str");
-        if($result !== false) $result = $result->fetchArray();
+        $result = $this->query("SELECT $dataToGet FROM $table$str");
         return $result;
     }
 
@@ -47,7 +46,7 @@ class DataBase extends SQLite3 {
         $table = $data["table"];
         unset($data["table"]);
         $str = $this->buildQueryArgs($data);
-        return $this->query("UPDATE $table SET $key = '$value' WHERE $str");
+        return $this->query("UPDATE $table SET $key = '$value'$str");
     }
 
 
@@ -68,7 +67,7 @@ class DataBase extends SQLite3 {
     */
     public function delete(string $table, array $data) {
         $str = $this->buildQueryArgs($data);
-        return $this->query("DELETE FROM $table WHERE $str");
+        return $this->query("DELETE FROM $table$str");
     }
 
     /*
@@ -77,9 +76,9 @@ class DataBase extends SQLite3 {
     @return string
     */
     public function buildQueryArgs(array $data) : string {
-        $str = "";
+        $str = " WHERE ";
         foreach($data as $k => $d) $str .= "$k = '$d' AND ";
-        return substr($str, 0, strlen($str) - 5);
+        return strlen($str) !== 7 ? substr($str, 0, strlen($str) - 5) : "";
     }
 
     /*
@@ -88,6 +87,7 @@ class DataBase extends SQLite3 {
     @return SQLite3Result|bool
     */
     public function query($qry) {
+        echo $qry . ";;";
         $res = parent::query($qry);
         if($res instanceof \SQLite3Result) self::setNumRows($res);
         return $res;

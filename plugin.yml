@@ -13,9 +13,12 @@
 name: HideAndSeek
 author:  Ad5001
 version: 1.0
-api: [3.0.0, 3.0.0-ALPHA1]
+api: [3.0.0, 3.0.0-ALPHA3]
 main: Ad5001\HideAndSeek\Main
 load: POSTWORLD
-commands: []
+commands:
+  hideandseek:
+    description: Main HideAndSeek management command
+    usage: /hideandseek <sub command> [parameters]
 permissions: []
 ...

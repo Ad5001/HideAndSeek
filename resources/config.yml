@@ -19,5 +19,15 @@
 Max players: 16
 
 # Seconds to wait between the time 75% of the maximum players have joined and the games starts.
-Waiting time: 16
+Waiting time: 60
+
+# Minutes seekers will have to find to find all the hiders before they win.
+Seeking time: 3
+
+# Percentage of the players that will be seekers.
+Seekers percentage: 10
+
+# Parameters below are set for every game and are not changable by commands
+# The world players should be tped to when the game ends.
+Lobby world: world
 ...

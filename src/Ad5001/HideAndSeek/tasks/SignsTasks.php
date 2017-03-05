@@ -14,7 +14,7 @@
 namespace Ad5001\HideAndSeek\tasks;
 
 use pocketmine\Server;
-use pocketmine\schedulerPluginTask;
+use pocketmine\scheduler\PluginTask;
 use pocketmine\Player;
 
 use Ad5001\HideAndSeek\Main;

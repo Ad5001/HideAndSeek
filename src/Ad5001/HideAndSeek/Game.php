@@ -58,10 +58,10 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
     */
     public function __construct(Level $level) {
         // Initialisation
+        $this->level = $level;
         $this->initDB();
         $level->game = $this;
-        $this->setLevel($level);
-        $this->registerEvents();
+        $this->getMain()->getServer()->getPluginManager()->registerEvents($this,$this->getMain());
 
         // Registering players
         foreach($this->getLevel()->getPlayers() as $p) {
@@ -70,7 +70,7 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
 
         // Loading timer.
         parent::__construct($this->getMain());
-        $this->getMain()->getServer()->getScheduler()->scheduleRepeatingTask($this, 1);
+        // $this->getMain()->getServer()->getScheduler()->scheduleRepeatingTask($this, 1);
     }
 
     /*
@@ -158,16 +158,17 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
     /*
     Inits the database for the game.
     */
-    public function initDB() {
+    protected function initDB() {
         $qry = $this->getMain()->getDatabase()->get("*", ["table" => "Games", "name" => $this->getName()]);
-        if(is_array($qry)) {
-            if(count($qry) == 0) { // Game not initiated in the db.
+        if($qry instanceof \SQLite3Result) {
+            if($qry->num_rows == 0) { // Game not initiated in the db.
+                $id = $this->getMain()->getDatabase()->get("*", ["table" => "Games"]);
                 $v3 = $this->getLevel()->getSafeSpawn();
                 $v3Ser = $v3->x . "," . $v3->y . "," . $v3->z; // V32String
-                $this->getMain()->getDatabase()->insert("Games", [$this->getName(), $v3Ser, $v3Ser, $this->getMain()->getMaxPlayers(), $this->getMain()->getWaitTime(), $this->getMain()->getSeekTime(), $this->getMain()->getSeekersPercentage()]); // Inserting the db with new queries
+                $this->getMain()->getDatabase()->insert("Games", [$this->getName(), $v3Ser, $v3Ser, $this->getMain()->getMaxPlayers(), $this->getMain()->getWaitTime(), $this->getMain()->getSeekTime(), $this->getMain()->getSeekersPercentage(), $id->num_rows]); // Inserting the db with new queries
             }
         } else {
-            throw new Exception("Could not contact database.");
+            throw new \Exception("Could not contact database.");
         }
     }
 
@@ -346,7 +347,7 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
     */
     public function setLevel(Level $level) {
         $this->level = $level;
-        return $this->getMain()->getDatabase()->set("level", $level->getName(), ["table" => "Games", "name" => $this->getName()]);
+        return $this->getMain()->getDatabase()->set("name", $level->getName(), ["table" => "Games", "name" => $this->getName()]);
     }
 
     /*
@@ -391,8 +392,9 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
              $this->getMain()->getServer()->getPluginManager()->getPlugin("SpectatorPlus")->isSpectator($player)))  { // Support for spectator Plus
                  $this->spectators[$player->getName()] = $player;
                  $player->HideAndSeekRole = self::ROLE_SPECTATE;
-        } elseif($this->step == self::STEP_WAIT) {
+        } elseif($this->step == self::STEP_WAIT || $this->step == self::STEP_START) {
             // API inside player's class (easilier to get data)
+            $this->sendMessage("§a" . $player->getName() . " joined (" . count($this->players) . "/" . $this->getMaxPlayers() . "). " . (count($this->players) - round($this->getMaxPlayers() * 0.75)) . "players left before starting");
             $player->hideAndSeekGame = $this;
             $player->HideAndSeekRole = self::ROLE_WAIT;
             $player->playsHideAndSeek = true;
@@ -470,9 +472,13 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
     @param     $event    \pocketmine\event\entity\EntityLevelChangeEvent
     */
     public function onEntityLevelChange(\pocketmine\event\entity\EntityLevelChangeEvent $event) {
-        if($event->getTarget()->getName() == $this->getName() && $event->getEntity instanceof Player) {
+        if($event->getTarget()->getName() == $this->getName() && $event->getEntity() instanceof Player) {
+            if(count($this->players) >= $this->getMaxPlayers()) {
+                $event->setCancelled();
+                $event->getEntity()->sendMessage(Main::PREFIX . "§cThe maximum number of players in this game has been reached.");
+            }
             $this->registerPlayer($event->getEntity());
-        } elseif($event->getOrigin()->getName() == $this->getName() && $event->getEntity instanceof Player) {
+        } elseif($event->getOrigin()->getName() == $this->getName() && $event->getEntity() instanceof Player) {
             $this->unregisterPlayer($event->getEntity());
         }
     }
@@ -482,7 +488,7 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
     @param     $event    \pocketmine\event\block\BlockBreakEvent
     */
     public function onBlockBreak(\pocketmine\event\block\BlockBreakEvent $event) {
-        if($event->getPlayer()->getLevel() == $this->getName()) {
+        if($event->getLevel()->getLevel() == $this->getName()) {
             $event->setCancelled();
         }
     }
@@ -492,7 +498,7 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
     @param     $event    \pocketmine\event\block\BlockPlaceEvent
     */
     public function onBlockPlace(\pocketmine\event\block\BlockPlaceEvent $event) {
-        if($event->getPlayer()->getLevel() == $this->getName()) {
+        if($event->getLevel()->getLevel() == $this->getName()) {
             $event->setCancelled();
         }
     }
@@ -515,6 +521,19 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
             $event->setCancelled();
         }
     }
+
+
+    /*
+    Checks when a player dies to prevent it.
+    @param     $event    \pocketmine\event\player\PlayerDeathEvent
+    */
+    public function onPlayerDeath(\pocketmine\event\player\PlayerDeathEvent $event) {
+        if($event->getPlayer()->getLevel() == $this->getName()) {
+            $event->setCancelled();
+        }
+    }
+
+
 
     /*
     Checks when a player joins in the world to make him rejoin automaticly

@@ -141,9 +141,10 @@ class GameManager {
         $result = $db->get("*", ["table" => "Games"]);
         if($result !== false) {
             while($row = $result->fetchArray()) {
+                if(is_null($row["name"])) return;
                 if(is_null($this->gamesName[$row["name"]]) && ($lvl = $this->getMain()->getServer()->getLevelByName($row["name"])) !== null) { // Game doesn't exists && level is loaded
-                    $this->games[$row["id"]] = new Game($lvl);
-                    $this->gamesNames[$row["name"]] = $row["id"];
+                    $this->games[$row["Id"]] = new Game($lvl);
+                    $this->gamesNames[$row["name"]] = $row["Id"];
                     $this->getMain()->getLogger()->notice("Succefully registered game level {$row['name']}.");
                 }
             }
