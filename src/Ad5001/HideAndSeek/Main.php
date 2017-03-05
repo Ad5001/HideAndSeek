@@ -67,6 +67,7 @@ A
         switch($cmd->getName()) {
                case "hideandseek":
                if(isset($args[0])) {
+                   $game = $this->getGameManager()->getGameByLevel($sender->getLevel());
                    switch(strtolower($args[0])) {
                        case "creategame":
                        case "addgame":
@@ -84,7 +85,6 @@ A
                        break;
                        case "deletegame":
                        case "delgame":
-                       $game = $this->getGameManager()->getGameByLevel($sender->getLevel());
                        if(!is_null($game)) {
                            unset($this->getGameManager()->{$sender->getLevel()->getName()});
                            $sender->sendMessage(self::PREFIX . "§cSuccefully deleted hide and seek game in level {$sender->getLevel()->getName()}.");
@@ -95,7 +95,6 @@ A
                        break;
                        case "setmaxplayers":
                        case "smp":
-                       $game = $this->getGameManager()->getGameByLevel($sender->getLevel());
                        if(!is_null($game)) {
                            if(isset($args[1]) && is_int($args[1]) && $args[1] > 1) {
                                $game->setMaxPlayers($args[1]);
@@ -110,7 +109,6 @@ A
                        break;
                        case "setseekerspercentage":
                        case "ssp":
-                       $game = $this->getGameManager()->getGameByLevel($sender->getLevel());
                        if(!is_null($game)) {
                            if(isset($args[1]) && is_int($args[1]) && $args[1] > 0 && $args[1] < 100) {
                                $game->setSeekersPercentage($args[1]);
@@ -126,7 +124,6 @@ A
                        case "setwaitingtime":
                        case "setwaittime":
                        case "swt":
-                       $game = $this->getGameManager()->getGameByLevel($sender->getLevel());
                        if(!is_null($game)) {
                            if(isset($args[1]) && is_int($args[1]) && $args[1] > 0) {
                                $game->setWaitTime($args[1]);
@@ -141,7 +138,6 @@ A
                        break;
                        case "setseektime":
                        case "sst":
-                       $game = $this->getGameManager()->getGameByLevel($sender->getLevel());
                        if(!is_null($game)) {
                            if(isset($args[1]) && is_int($args[1]) && $args[1] > 0) {
                                $game->setSeekTime($args[1]);
@@ -157,7 +153,6 @@ A
                        case "setspawn":
                        case "ss":
                        $pos = new \pocketmine\math\Vector3($sender->x, $sender->y, $sender->z);
-                       $game = $this->getGameManager()->getGameByLevel($sender->getLevel());
                        if(!is_null($game)) {
                            $game->setSpawn($pos);
                            $sender->sendMessage(self::PREFIX . "§cSuccefully set spawn of hide and seek game in level {$sender->getLevel()->getName()} to x: $pos->x, y: $pos->y, z: $pos->z.");
@@ -169,7 +164,6 @@ A
                        case "setseekersspawn":
                        case "sss":
                        $pos = new \pocketmine\math\Vector3($sender->x, $sender->y, $sender->z);
-                       $game = $this->getGameManager()->getGameByLevel($sender->getLevel());
                        if(!is_null($game)) {
                            $game->setSeekersSpawn($pos);
                            $sender->sendMessage(self::PREFIX . "§cSuccefully set seekers spawn of hide and seek game in level {$sender->getLevel()->getName()} to x: $pos->x, y: $pos->y, z: $pos->z.");
@@ -178,8 +172,34 @@ A
                            $sender->sendMessage(self::PREFIX . "§cYou're not in an hide and seek game world.");
                        }
                        break;
-                       case "editmode":
+                       case "editmode": //TODO: Mode to edit the map (doesn't let players joining exept if they have a permission & enables block placing and breaking)
                        break;
+                       case "start":
+                       if(!is_null($game)) {
+                           if(count($game->getPlayers()) > 1) {
+                               $game->start();
+                               foreach(array_merge($game->getPlayers(), $game->getSpectators()) as $p) {
+                                   $p->sendMessage(Main::PREFIX . "§aGame started ! There is $this->seekersCount seekers and $this->hidersLeft hiders.");
+                                   if($p->HideAndSeekRole == self::ROLE_SEEK) {
+                                       $p->teleport($game->getSeekerSpawn());
+                                   } elseif($p->HideAndSeekRole == self::ROLE_HIDE) {
+                                       $p->teleport($game->getSpawn());
+                                       $p->sendPopup("§lHider: You have 1 minute to hide yourself so seekers won't find you ! Don't get caught for " . $this->getSeekTime() . " minutes to win !");
+                                   }
+                               }
+                           }
+                           return true;
+                       } else {
+                           $sender->sendMessage(self::PREFIX . "§cYou're not in an hide and seek game world.");
+                       }
+                       break;
+                       case "stop":
+                       if(!is_null($game)) {
+                           $sender->sendMessage(self::PREFIX . "§aStoping game....");
+                           return true;
+                       } else {
+                           $sender->sendMessage(self::PREFIX . "§cYou're not in an hide and seek game world.");
+                       }
                        default:
                        $sender->sendMessage(str_ireplace(PHP_EOL, PHP_EOL . self::PREFIX,self::PREFIX. "§cSub-command {$args[0]} not found !
 Possible subcommands:
@@ -191,6 +211,8 @@ Possible subcommands:
 - setseektime <minutes to seek>(or sst): Sets the time seekers have to find all hiders before hiders wins
 - setspawn(or ss): Sets the spawn of the place players will wait, hide, and seek
 - setseekersspawn(or sss): Sets the place where players will be tped to while hiders are hiding
+- start: Force start the game
+- stop: Force stop the game
 Please note that all those subcommands are relative to the world where you execute the command in."));
                         break; 
                    }

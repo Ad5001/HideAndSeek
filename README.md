@@ -17,4 +17,6 @@ Sub Commands:
 - setseektime <minutes to seek>(or sst): Sets the time seekers have to find all hiders before hiders wins
 - setspawn(or ss): Sets the spawn of the place players will wait, hide, and seek
 - setseekersspawn(or sss): Sets the place where players will be tped to while hiders are hiding
+- start: Force start the game
+- stop: Force stop the game
 Please note that all those subcommands are relative to the world where you execute the command in.

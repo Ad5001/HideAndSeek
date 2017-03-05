@@ -48,7 +48,7 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
     // Game based informations
     protected $step = self::STEP_WAIT;
     protected $win = self::NO_WIN;
-    protected $stepTick;
+    public $stepTick;
     protected $hidersLeft;
     protected $seekersCount;
     
@@ -96,7 +96,6 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
                 }
             }
             if($this->getWaitTime() - ($tickWaited / 20) <= 0) {
-                $this->stepTick = $tick;
                 $this->start();
                 foreach(array_merge($this->getPlayers(), $this->getSpectators()) as $p) {
                     $p->sendMessage(Main::PREFIX . "§aGame started ! There is $this->seekersCount seekers and $this->hidersLeft hiders.");
@@ -189,6 +188,7 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
     Starts the game
     */
     public function start() {
+        $this->stepTick = $this->getMain()->getServer()->getTick();
         $count = count($this->players);
         $this->seekersCount = round($count * ($this->getSeekersPercentage() / 100), 0, PHP_ROUND_HALF_UP); // Minimum $this->getSeekersPercentage() percents of the players (inimum because if there are less than $this->getSeekersPercentage(), then there could be no seeker)
         $this->hidersLeft = count($this->players) - $this->seekersCount;
