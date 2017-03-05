@@ -165,7 +165,7 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
                 $id = $this->getMain()->getDatabase()->get("*", ["table" => "Games"]);
                 $v3 = $this->getLevel()->getSafeSpawn();
                 $v3Ser = $v3->x . "," . $v3->y . "," . $v3->z; // V32String
-                $this->getMain()->getDatabase()->insert("Games", [$this->getName(), $v3Ser, $v3Ser, $this->getMain()->getMaxPlayers(), $this->getMain()->getWaitTime(), $this->getMain()->getSeekTime(), $this->getMain()->getSeekersPercentage(), $id->num_rows]); // Inserting the db with new queries
+                $this->getMain()->getDatabase()->insert("Games", [$this->getName(), $v3Ser, $v3Ser, $this->getMain()->getMaxPlayers(), $this->getMain()->getWaitTime(), $this->getMain()->getSeekTime(), $this->getMain()->getSeekersPercentage(), $id->num_rows+1]); // Inserting the db with new queries
             }
         } else {
             throw new \Exception("Could not contact database.");
@@ -212,7 +212,7 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
     @return \pocketmine\math\Vector3 
     */
     public function getSpawn() : Vector3 {
-        $data = $this->getMain()->getDatabase()->get("spawnpoint", ["table" => "Games", "name" => $this->getName()]);
+        $data = $this->getMain()->getDatabase()->get("spawnpoint", ["table" => "Games", "name" => $this->getName()])->fetchArray()[0];
         $data = explode(",", $data);
         return new Vector3($data[0], $data[1], $data[2]);
     }
@@ -223,7 +223,7 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
     @return \pocketmine\math\Vector3 
     */
     public function getSeekerSpawn() : Vector3 {
-        $data = $this->getMain()->getDatabase()->get("seekerspawn", ["table" => "Games", "name" => $this->getName()]);
+        $data = $this->getMain()->getDatabase()->get("seekerspawn", ["table" => "Games", "name" => $this->getName()])->fetchArray()[0];
         $data = explode(",", $data);
         return new Vector3($data[0], $data[1], $data[2]);
     }
@@ -294,7 +294,7 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
     @return int
     */
     public function getMaxPlayers() : int {
-        return (int) $this->getMain()->getDatabase()->get("max_players", ["table" => "Games", "name" => $this->getName()])[0];
+        return (int) $this->getMain()->getDatabase()->get("max_players", ["table" => "Games", "name" => $this->getName()])->fetchArray()[0];
     }
 
     /*
@@ -302,7 +302,7 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
     @return int
     */
     public function getWaitTime() : int {
-        return (int) $this->getMain()->getDatabase()->get("waiting_time", ["table" => "Games", "name" => $this->getName()]);
+        return (int) $this->getMain()->getDatabase()->get("waiting_time", ["table" => "Games", "name" => $this->getName()])->fetchArray()[0];
     }
 
     /*
@@ -310,7 +310,7 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
     @return int
     */
     public function getSeekTime() : int {
-        return (int) $this->getMain()->getDatabase()->get("seek_time", ["table" => "Games", "name" => $this->getName()]);
+        return (int) $this->getMain()->getDatabase()->get("seek_time", ["table" => "Games", "name" => $this->getName()])->fetchArray()[0];
     }
 
     /*
@@ -318,7 +318,7 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
     @return int
     */
     public function getSeekersPercentage() : int {
-        return (int) $this->getMain()->getDatabase()->get("seekers_percentage", ["table" => "Games", "name" => $this->getName()]);
+        return (int) $this->getMain()->getDatabase()->get("seekers_percentage", ["table" => "Games", "name" => $this->getName()])->fetchArray()[0];
     }
     
     // SET
@@ -329,7 +329,7 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
     */
     public function setSpawn(Vector3 $v3) {
         $str = $v3->x . "," . $v3->y . "," . $v3->z;
-        return $this->getMain()->getDatabase()->set("spawnpoint", $str, ["table" => "Games", "name" => $this->getName()]);
+        return $this->getMain()->getDatabase()->set("spawnpoint", $str, ["table" => "Games", "name" => $this->getName()])->fetchArray()[0];
     }
 
     /*
@@ -338,7 +338,7 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
     */
     public function setSeekerSpawn(Vector3 $v3) {
         $str = $v3->x . "," . $v3->y . "," . $v3->z;
-        return $this->getMain()->getDatabase()->set("seekerspawn", $str, ["table" => "Games", "name" => $this->getName()]);
+        return $this->getMain()->getDatabase()->set("seekerspawn", $str, ["table" => "Games", "name" => $this->getName()])->fetchArray()[0];
     }
 
     /*
@@ -347,7 +347,7 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
     */
     public function setLevel(Level $level) {
         $this->level = $level;
-        return $this->getMain()->getDatabase()->set("name", $level->getName(), ["table" => "Games", "name" => $this->getName()]);
+        return $this->getMain()->getDatabase()->set("name", $level->getName(), ["table" => "Games", "name" => $this->getName()])->fetchArray()[0];
     }
 
     /*
@@ -355,7 +355,7 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
     @param     $int    int
     */
     public function setMaxPlayers(int $int) {
-        return $this->getMain()->getDatabase()->set("max_players", $level->getName(), ["table" => "Games", "name" => $this->getName()]);
+        return $this->getMain()->getDatabase()->set("max_players", $level->getName(), ["table" => "Games", "name" => $this->getName()])->fetchArray()[0];
     }
 
     /*
@@ -363,7 +363,7 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
     @param     $int    int
     */
     public function setWaitTime(int $int) {
-        return $this->getMain()->getDatabase()->set("waiting_time", $level->getName(), ["table" => "Games", "name" => $this->getName()]);
+        return $this->getMain()->getDatabase()->set("waiting_time", $level->getName(), ["table" => "Games", "name" => $this->getName()])->fetchArray()[0];
     }
 
     /*
@@ -371,7 +371,7 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
     @param     $int    int
     */
     public function setSeekTime(int $int) {
-        return $this->getMain()->getDatabase()->set("seek_time", $level->getName(), ["table" => "Games", "name" => $this->getName()]);
+        return $this->getMain()->getDatabase()->set("seek_time", $level->getName(), ["table" => "Games", "name" => $this->getName()])->fetchArray()[0];
     }
 
     /*
@@ -379,7 +379,7 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
     @param     $int    int
     */
     public function setSeekersPercentage(int $int) {
-        return $this->getMain()->getDatabase()->set("seekers_percentage", $level->getName(), ["table" => "Games", "name" => $this->getName()]);
+        return $this->getMain()->getDatabase()->set("seekers_percentage", $level->getName(), ["table" => "Games", "name" => $this->getName()])->fetchArray()[0];
     }
 
     /*
@@ -488,7 +488,7 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
     @param     $event    \pocketmine\event\block\BlockBreakEvent
     */
     public function onBlockBreak(\pocketmine\event\block\BlockBreakEvent $event) {
-        if($event->getLevel()->getLevel() == $this->getName()) {
+        if($event->getBlock()->getLevel()->getLevel() == $this->getName()) {
             $event->setCancelled();
         }
     }
@@ -498,7 +498,7 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
     @param     $event    \pocketmine\event\block\BlockPlaceEvent
     */
     public function onBlockPlace(\pocketmine\event\block\BlockPlaceEvent $event) {
-        if($event->getLevel()->getLevel() == $this->getName()) {
+        if($event->getBlock()->getLevel()->getLevel() == $this->getName()) {
             $event->setCancelled();
         }
     }

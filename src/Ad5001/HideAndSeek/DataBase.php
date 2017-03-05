@@ -99,7 +99,7 @@ class DataBase extends SQLite3 {
     */
     protected static function setNumRows(\SQLite3Result &$result) {
         $n = 0;
-        while($result->fetchArray() !== false) $n++;
+        while($result->fetchArray()) $n++;
         $result->reset();
         $result->num_rows = $n;
     }

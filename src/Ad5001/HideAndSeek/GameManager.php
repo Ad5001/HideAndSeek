@@ -103,8 +103,8 @@ class GameManager {
     public function __unset(string $name) {
         if(!is_null($this->getGameByName($name))) {
             $this->getMain()->getDataBase()->delete("Games", ["name" => $name]);
-            unset($this->gamesNames[$name]);
             unset($this->games[$this->gamesNames[$name]]);
+            unset($this->gamesNames[$name]);
         } else {
             $this->getMain()->getDataBase()->delete("Games", ["name" => $this->games[$id]->getName()]);
             unset($this->games[$name]);

@@ -178,6 +178,8 @@ A
                            $sender->sendMessage(self::PREFIX . "§cYou're not in an hide and seek game world.");
                        }
                        break;
+                       case "editmode":
+                       break;
                        default:
                        $sender->sendMessage(str_ireplace(PHP_EOL, PHP_EOL . self::PREFIX,self::PREFIX. "§cSub-command {$args[0]} not found !
 Possible subcommands:
@@ -190,6 +192,7 @@ Possible subcommands:
 - setspawn(or ss): Sets the spawn of the place players will wait, hide, and seek
 - setseekersspawn(or sss): Sets the place where players will be tped to while hiders are hiding
 Please note that all those subcommands are relative to the world where you execute the command in."));
+                        break; 
                    }
                    return true;
                } else {
