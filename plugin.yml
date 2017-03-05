@@ -20,5 +20,10 @@ commands:
   hideandseek:
     description: Main HideAndSeek management command
     usage: /hideandseek <sub command> [parameters]
-permissions: []
+    permission: hideandseek.cmd
+    aliases: [hide&seek, h&s]
+permissions: 
+  hideandseek.cmd:
+    default: op
+    description: /hideandseek permission
 ...

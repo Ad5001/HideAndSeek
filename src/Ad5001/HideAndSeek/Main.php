@@ -187,6 +187,8 @@ A
                                        $p->sendPopup("§lHider: You have 1 minute to hide yourself so seekers won't find you ! Don't get caught for " . $this->getSeekTime() . " minutes to win !");
                                    }
                                }
+                           } else {
+                               $sender->sendMessage(self::PREFIX . "§cThere must be atleast 2 players in your game to force start it.");
                            }
                            return true;
                        } else {
