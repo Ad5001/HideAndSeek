@@ -26,7 +26,7 @@ use Ad5001\HideAndSeek\GameManager;
 class Game extends PluginTask /* Allows easy game running */ implements Listener {
 
     const STEP_WAIT = 0;
-    const STEP_STARTING = 1;
+    const STEP_START = 1;
     const STEP_HIDE = 2;
     const STEP_SEEK = 3;
     const STEP_WIN = 4;
@@ -46,9 +46,9 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
     protected $spectators = [];
 
     // Game based informations
-    protected $step = self::STEP_WAIT;
+    public $step = self::STEP_WAIT;
     protected $win = self::NO_WIN;
-    public $stepTick;
+    protected $stepTick;
     protected $hidersLeft;
     protected $seekersCount;
     
@@ -70,7 +70,7 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
 
         // Loading timer.
         parent::__construct($this->getMain());
-        // $this->getMain()->getServer()->getScheduler()->scheduleRepeatingTask($this, 1);
+        $this->getMain()->getServer()->getScheduler()->scheduleRepeatingTask($this, 1);
     }
 
     /*
@@ -122,7 +122,7 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
                 }
             }
             break;
-            case self:STEP_SEEK:
+            case self::STEP_SEEK:
             $tickWaited = $tick - $this->stepTick;
             if($tickWaited % 20*60 == 0) {
                 foreach(array_merge($this->getPlayers(), $this->getSpectators()) as $p) {
@@ -145,7 +145,7 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
                 } else {
                     $p->sendMessage(Main::PREFIX . "§aGame cancelled !");
                 }
-                $p->teleport($this->getLobbyWorld());
+                $p->teleport($this->getMain()->getLobbyWorld()->getSafeSpawn());
                 $p->setGamemode($this->getMain()->getServer()->getDefaultGamemode());
             }
             $this->step = self::STEP_WAIT;

@@ -198,6 +198,7 @@ A
                        case "stop":
                        if(!is_null($game)) {
                            $sender->sendMessage(self::PREFIX . "§aStoping game....");
+                           $game->step = Game::STEP_WIN;
                            return true;
                        } else {
                            $sender->sendMessage(self::PREFIX . "§cYou're not in an hide and seek game world.");
