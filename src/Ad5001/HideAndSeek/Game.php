@@ -214,6 +214,7 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
     public function getSpawn() : Vector3 {
         $data = $this->getMain()->getDatabase()->get("spawnpoint", ["table" => "Games", "name" => $this->getName()])->fetchArray()[0];
         $data = explode(",", $data);
+        if(!isset($data[1])) return $this->getLevel()->getSafeSpawn();
         return new Vector3($data[0], $data[1], $data[2]);
     }
 
@@ -225,6 +226,7 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
     public function getSeekerSpawn() : Vector3 {
         $data = $this->getMain()->getDatabase()->get("seekerspawn", ["table" => "Games", "name" => $this->getName()])->fetchArray()[0];
         $data = explode(",", $data);
+        if(!isset($data[1])) return $this->getLevel()->getSafeSpawn();
         return new Vector3($data[0], $data[1], $data[2]);
     }
 

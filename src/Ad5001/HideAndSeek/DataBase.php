@@ -87,7 +87,7 @@ class DataBase extends SQLite3 {
     @return SQLite3Result|bool
     */
     public function query($qry) {
-        echo $qry . ";;";
+        $this->getLogger()->debug($qry);
         $res = parent::query($qry);
         if($res instanceof \SQLite3Result) self::setNumRows($res);
         return $res;
