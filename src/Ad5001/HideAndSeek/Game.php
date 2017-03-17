@@ -113,6 +113,9 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
             case self::STEP_HIDE:
             // $this->getMain()->getLogger()->debug("Running game " . $this->getName() . " at hide step");
             $tickWaited = $tick - $this->stepTick;
+            if($tickWaited % (20*10) == 0) {
+                $this->sendMessage("§aSeekers will be released in " . (60 - ($this->tickwaited / 20)) . " seconds !");
+            }
             if($tickWaited >= 20*60) { // One minute has past !
                 $this->step = self::STEP_SEEK;
                 $this->stepTick = $tick;
@@ -130,7 +133,7 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
             $tickWaited = $tick - $this->stepTick;
             if($tickWaited % (20*60) == 0) {
                 foreach(array_merge($this->getPlayers(), $this->getSpectators()) as $p) {
-                    $p->sendMessage(Main::PREFIX . "§aGame ends in " . ($this->getSeekTime() - ($tickWaited / 20 / 60)) . " minutes.");
+                    $p->sendMessage(Main::PREFIX . "§aGame ends in " . ($this->getSeekTime() - ($this->tickWaited / 20 / 60)) . " minutes.");
                 }
             }
             if($tickWaited >= 20*60*$this->getSeekTime()) { // Seek time has past 
@@ -144,12 +147,13 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
                 if($this->win == self::WIN_SEEKERS) {
                     $p->sendMessage(Main::PREFIX . "§aThe last hider got caught ! Seekers won !");
                     $p->sendTip("§a§lSeekers won !");
-                } elseif($this->win == self::WIN_SEEKERS) {
+                } elseif($this->win == self::WIN_HIDERS) {
                     $p->sendMessage(Main::PREFIX . "§aTimes up ! Hiders won !");
                     $p->sendTip("§a§lHiders won !");
                 } else {
                     $p->sendMessage(Main::PREFIX . "§aGame cancelled !");
                 }
+                $p->HideAndSeekRole = self::ROLE_WAIT;
                 $p->teleport($this->getMain()->getLobbyWorld()->getSafeSpawn());
                 $p->setGamemode($this->getMain()->getServer()->getDefaultGamemode());
             }
@@ -354,7 +358,7 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
     */
     public function setSpawn(Vector3 $v3) {
         $str = $v3->x . "," . $v3->y . "," . $v3->z;
-        return $this->getMain()->getDatabase()->set("spawnpoint", $str, ["table" => "Games", "name" => $this->getName()])->fetchArray()[0];
+        return $this->getMain()->getDatabase()->set("spawnpoint", $str, ["table" => "Games", "name" => $this->getName()]);
     }
 
     /*
@@ -363,7 +367,7 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
     */
     public function setSeekersSpawn(Vector3 $v3) {
         $str = $v3->x . "," . $v3->y . "," . $v3->z;
-        return $this->getMain()->getDatabase()->set("seekerspawn", $str, ["table" => "Games", "name" => $this->getName()])->fetchArray()[0];
+        return $this->getMain()->getDatabase()->set("seekerspawn", $str, ["table" => "Games", "name" => $this->getName()]);
     }
 
     /*
@@ -372,7 +376,7 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
     */
     public function setLevel(Level $level) {
         $this->level = $level;
-        return $this->getMain()->getDatabase()->set("name", $level->getName(), ["table" => "Games", "name" => $this->getName()])->fetchArray()[0];
+        return $this->getMain()->getDatabase()->set("name", $this->getName(), ["table" => "Games", "name" => $this->getName()]);
     }
 
     /*
@@ -380,7 +384,7 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
     @param     $int    int
     */
     public function setMaxPlayers(int $int) {
-        return $this->getMain()->getDatabase()->set("max_players", $level->getName(), ["table" => "Games", "name" => $this->getName()])->fetchArray()[0];
+        return $this->getMain()->getDatabase()->set("max_players", $int, ["table" => "Games", "name" => $this->getName()]);
     }
 
     /*
@@ -388,7 +392,7 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
     @param     $int    int
     */
     public function setWaitTime(int $int) {
-        return $this->getMain()->getDatabase()->set("waiting_time", $level->getName(), ["table" => "Games", "name" => $this->getName()])->fetchArray()[0];
+        return $this->getMain()->getDatabase()->set("waiting_time", $int, ["table" => "Games", "name" => $this->getName()]);
     }
 
     /*
@@ -396,7 +400,7 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
     @param     $int    int
     */
     public function setSeekTime(int $int) {
-        return $this->getMain()->getDatabase()->set("seek_time", $level->getName(), ["table" => "Games", "name" => $this->getName()])->fetchArray()[0];
+        return $this->getMain()->getDatabase()->set("seek_time", $int, ["table" => "Games", "name" => $this->getName()]);
     }
 
     /*
@@ -404,7 +408,7 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
     @param     $int    int
     */
     public function setSeekersPercentage(int $int) {
-        return $this->getMain()->getDatabase()->set("seekers_percentage", $level->getName(), ["table" => "Games", "name" => $this->getName()])->fetchArray()[0];
+        return $this->getMain()->getDatabase()->set("seekers_percentage", $int, ["table" => "Games", "name" => $this->getName()]);
     }
 
     /*
@@ -478,7 +482,7 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
     @param     $message    string
     */
     public function sendMessage(string $message) {
-        foreach(array_merge($this->getPlayers(), $this->getSpectators()) as $p) {
+        foreach($this->getLevel()->getPlayers() as $p) {
             $p->sendMessage(Main::PREFIX . $message);
         }
     }
@@ -515,7 +519,7 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
     */
     public function onPlayerMove(\pocketmine\event\player\PlayerMoveEvent $event) {
         if($event->getPlayer()->getLevel()->getName() == $this->getName()) {
-            if($event->getPlayer()->HideAndSeekRole == self::ROLE_SEEK && $this->step == self::STEP_HIDE) {
+            if($event->getPlayer()->HideAndSeekRole == self::ROLE_SEEK && $this->step == self::STEP_HIDE && ($event->getTo()->x !== $event->getPlayer()->x || $event->getTo()->y !== $event->getPlayer()->y || $event->getTo()->z !== $event->getPlayer()->z)) {
                 $event->setCancelled();
             }
         }
@@ -554,8 +558,17 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
             && $event->getDamager() instanceof Player
             && (isset($event->getDamager()->HideAndSeekRole) ? $event->getDamager()->HideAndSeekRole : -1) == self::ROLE_SEEK
             && (isset($event->getEntity()->HideAndSeekRole) ? $event->getEntity()->HideAndSeekRole : -1) == self::ROLE_HIDE) { // Tagging
+                $this->hidersLeft--;
                 $event->getEntity()->HideAndSeekRole = self::ROLE_SEEK;
                 $event->getEntity()->teleport($this->getSpawn());
+                $event->getEntity()->sendMessage(Main::PREFIX . "§aYou got caught !");
+                if($this->hidersLeft == 0) {
+                    $this->step = self::STEP_WIN;
+                    $this->win = self::WIN_SEEKERS;
+                } else {
+                    $event->getEntity()->sendMessage(Main::PREFIX . "§aYou're now a seeker!");
+                    $event->getEntity()->sendMessage("§lSeeker: Seek the hiders ! Catch them all to win in " . $this->getSeekTime() . " minutes to win !");
+                }
             }
             $event->setCancelled();
         }

@@ -103,8 +103,8 @@ A
                        case "setmaxplayers":
                        case "smp":
                        if(!is_null($game)) {
-                           if(isset($args[1]) && is_int($args[1]) && $args[1] > 1) {
-                               $game->setMaxPlayers($args[1]);
+                           if(isset($args[1]) && (int) $args[1] > 1) {
+                               $game->setMaxPlayers((int) $args[1]);
                                $sender->sendMessage(self::PREFIX . "§cSuccefully set maximum amount of players of hide and seek game in level {$sender->getLevel()->getName()} to {$args[1]}.");
                            } else {
                                $sender->sendMessage("§cUsage: /hideandseek setmaxplayers <max amount>");
@@ -119,7 +119,7 @@ A
                        if(!is_null($game)) {
                            if(isset($args[1]) && (int) $args[1] > 0 && (int) $args[1] < 100) {
                                $game->setSeekersPercentage((int) $args[1]);
-                               $sender->sendMessage(self::PREFIX . "§cSuccefully set seekers percentage of hide and seek game in level {$sender->getLevel()->getName()} to {$args[1]}.");
+                               $sender->sendMessage(self::PREFIX . "§cSuccefully set seekers percentage of hide and seek game in level {$sender->getLevel()->getName()} to {$args[1]}%.");
                            } else {
                                $sender->sendMessage("§cUsage: /hideandseek setseekerspercentage <percentage>");
                            }
@@ -132,7 +132,7 @@ A
                        case "setwaittime":
                        case "swt":
                        if(!is_null($game)) {
-                           if(isset($args[1]) && is_int($args[1]) && $args[1] > 0) {
+                           if(isset($args[1]) && (int) $args[1] > 0) {
                                $game->setWaitTime($args[1]);
                                $sender->sendMessage(self::PREFIX . "§cSuccefully set waiting time of hide and seek game in level {$sender->getLevel()->getName()} to {$args[1]}.");
                            } else {
@@ -146,7 +146,7 @@ A
                        case "setseektime":
                        case "sst":
                        if(!is_null($game)) {
-                           if(isset($args[1]) && is_int($args[1]) && $args[1] > 0) {
+                           if(isset($args[1]) && (int) $args[1] > 0) {
                                $game->setSeekTime($args[1]);
                                $sender->sendMessage(self::PREFIX . "§cSuccefully set seeking time of hide and seek game in level {$sender->getLevel()->getName()} to {$args[1]}.");
                            } else {
@@ -211,20 +211,20 @@ A
                            $sender->sendMessage(self::PREFIX . "§cYou're not in an hide and seek game world.");
                        }
                        break;
-                       case "setsign":
-                       if(!isset($args[1])) {
-                           $sender->sendMessage(self::PREFIX . "§cUsage: /hideandseek setsign <game level>");
-                           return true;
-                       }
-                       $game = $this->getGameManager()->getGameByName($args[1]);
-                       if($game == null) {
-                           $sender->sendMessage(self::PREFIX . "§cGame level $args[1] not found.");
-                           return true;
-                       }
-                       $this->setsignsession[$sender->getName()] = $args[1];
-                       $sender->sendMessage(self::PREFIX . "§aTap a sign to create the teleportation sign to game $args[1].");
-                       return true;
-                       break;
+                    //    case "setsign":
+                    //    if(!isset($args[1])) {
+                    //        $sender->sendMessage(self::PREFIX . "§cUsage: /hideandseek setsign <game level>");
+                    //        return true;
+                    //    }
+                    //    $game = $this->getGameManager()->getGameByName($args[1]);
+                    //    if($game == null) {
+                    //        $sender->sendMessage(self::PREFIX . "§cGame level $args[1] not found.");
+                    //        return true;
+                    //    }
+                    //    $this->setsignsession[$sender->getName()] = $args[1];
+                    //    $sender->sendMessage(self::PREFIX . "§aTap a sign to create the teleportation sign to game $args[1].");
+                    //    return true;
+                    //    break;
                        default:
                        $sender->sendMessage(str_ireplace(PHP_EOL, PHP_EOL . self::PREFIX,self::PREFIX. "§cSub-command {$args[0]} not found !
 Possible subcommands:
