@@ -17,14 +17,20 @@ use pocketmine\command\CommandSender;
 use pocketmine\command\Command;
 use pocketmine\event\Listener;
 use pocketmine\plugin\PluginBase;
+use pocketmine\nbt\tag\ListTag;
+use pocketmine\nbt\tag\StringTag;
 use pocketmine\Server;
 use pocketmine\Player;
+
+use Ad5001\HideAndSeek\tasks\SignsTask;
+
 class Main extends PluginBase implements Listener {
 
     const PREFIX = "§a§l§o[§r§l§2Hide§eAnd§6Seek§o§a] §r§f";
 
     protected $db;
     protected $gamemanager;
+    protected $setsignsession = [];
 
 
    /*
@@ -52,6 +58,7 @@ A
         }
 
         $this->gamemanager = new GameManager();
+        //$this->getServer()->getScheduler()->scheduleRepeatingTask(new SignsTask($this), 10);
    }
 
 
@@ -110,8 +117,8 @@ A
                        case "setseekerspercentage":
                        case "ssp":
                        if(!is_null($game)) {
-                           if(isset($args[1]) && is_int($args[1]) && $args[1] > 0 && $args[1] < 100) {
-                               $game->setSeekersPercentage($args[1]);
+                           if(isset($args[1]) && (int) $args[1] > 0 && (int) $args[1] < 100) {
+                               $game->setSeekersPercentage((int) $args[1]);
                                $sender->sendMessage(self::PREFIX . "§cSuccefully set seekers percentage of hide and seek game in level {$sender->getLevel()->getName()} to {$args[1]}.");
                            } else {
                                $sender->sendMessage("§cUsage: /hideandseek setseekerspercentage <percentage>");
@@ -179,12 +186,12 @@ A
                            if(count($game->getPlayers()) > 1) {
                                $game->start();
                                foreach(array_merge($game->getPlayers(), $game->getSpectators()) as $p) {
-                                   $p->sendMessage(Main::PREFIX . "§aGame started ! There is $this->seekersCount seekers and $this->hidersLeft hiders.");
-                                   if($p->HideAndSeekRole == self::ROLE_SEEK) {
-                                       $p->teleport($game->getSeekerSpawn());
-                                   } elseif($p->HideAndSeekRole == self::ROLE_HIDE) {
+                                   $p->sendMessage(Main::PREFIX . "§aGame started ! There is {$game->getSeekersCount()} seekers and {$game->getHidersLeft()} hiders.");
+                                   if($p->HideAndSeekRole == Game::ROLE_SEEK) {
+                                       $p->teleport($game->getSeekersSpawn());
+                                   } elseif($p->HideAndSeekRole == Game::ROLE_HIDE) {
                                        $p->teleport($game->getSpawn());
-                                       $p->sendPopup("§lHider: You have 1 minute to hide yourself so seekers won't find you ! Don't get caught for " . $this->getSeekTime() . " minutes to win !");
+                                       $p->sendMessage("§lHider: You have 1 minute to hide yourself so seekers won't find you ! Don't get caught for " . $game->getSeekTime() . " minutes to win !");
                                    }
                                }
                            } else {
@@ -203,6 +210,21 @@ A
                        } else {
                            $sender->sendMessage(self::PREFIX . "§cYou're not in an hide and seek game world.");
                        }
+                       break;
+                       case "setsign":
+                       if(!isset($args[1])) {
+                           $sender->sendMessage(self::PREFIX . "§cUsage: /hideandseek setsign <game level>");
+                           return true;
+                       }
+                       $game = $this->getGameManager()->getGameByName($args[1]);
+                       if($game == null) {
+                           $sender->sendMessage(self::PREFIX . "§cGame level $args[1] not found.");
+                           return true;
+                       }
+                       $this->setsignsession[$sender->getName()] = $args[1];
+                       $sender->sendMessage(self::PREFIX . "§aTap a sign to create the teleportation sign to game $args[1].");
+                       return true;
+                       break;
                        default:
                        $sender->sendMessage(str_ireplace(PHP_EOL, PHP_EOL . self::PREFIX,self::PREFIX. "§cSub-command {$args[0]} not found !
 Possible subcommands:
@@ -309,5 +331,30 @@ Please note that all those subcommands are relative to the world where you execu
     */
     public function onLevelLoad(\pocketmine\event\level\LevelLoadEvent $event) {
         $this->getGameManager()->refreshRegisterGames($this->getDatabase());
+    }
+
+    /*
+    Checks when a player interacts. Used to set signs and tp to the world that the sign reports to.
+    @param     $event    \pocketmine\event\player\PlayerInteractEvent
+    */
+    public function onInteract(\pocketmine\event\player\PlayerInteractEvent $event) {
+        $t = $event->getBlock()->getLevel()->getTile($event->getBlock());
+        if($t instanceof \pocketmine\tile\Sign) {
+            if(isset($this->setsignsession[$event->getPlayer()->getName()])) {
+                $game = $this->getGameManager()->getGameByName($this->setsignsession[$event->getPlayer()->getName()]);
+                $name = $this->setsignsession[$event->getPlayer()->getName()];
+                unset($this->setsignsession[$event->getPlayer()->getName()]);
+                if(!($game instanceof Game)) {
+                    $event->getPlayer()->sendMessage(self::PREFIX . "§cSelected game ($name) doesn't exists anymore. Did you deleted it ?");
+                    return true;
+                }
+                safe_var_dump($t);
+                $t->namedtag->hideAndSeekSignData = new ListTag("hideAndSeekSignData", [
+                    "levelName" => new StringTag("levelName", $game->getName())
+                ]);
+                $t->namedtag->hideAndSeekSignData->levelName = new StringTag("levelName", $game->getName());
+                $event->getPlayer()->sendMessage(self::PREFIX."Succefully set this sign to point to world $name.");
+            }
+        }
     }
 }

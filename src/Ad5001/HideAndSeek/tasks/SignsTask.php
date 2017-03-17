@@ -21,10 +21,11 @@ use pocketmine\nbt\tag\ListTag;
 use pocketmine\nbt\tag\StringTag;
 
 use Ad5001\HideAndSeek\Main;
+use Ad5001\HideAndSeek\Game;
 
 
 
-class Task1 extends PluginTask {
+class SignsTask extends PluginTask {
 
 
    public function __construct(Main $main) {
@@ -40,11 +41,16 @@ class Task1 extends PluginTask {
                if($t instanceof Sign) {
                    if(isset($t->namedtag->hideAndSeekSignData)) {
                        if(!isset($t->namedtag->hideAndSeekSignData->model)) {
-                           $t->namedtag->hideAndSeekSignData->model = new ListTag("model", [
-                               1 => $t->namedtag->Text1,
-                               2 => $t->namedtag->Text2,
-                               3 => $t->namedtag->Text3,
-                               4 => $t->namedtag->Text4
+                           $this->getOwner()->getLogger()->debug("SettingModel l44");
+                           $t->namedtag->hideAndSeekSignData->setValue([
+                               "model" => new ListTag("model", [
+                                   1 => $t->namedtag->Text1,
+                                   2 => $t->namedtag->Text2,
+                                   3 => $t->namedtag->Text3,
+                                   4 => $t->namedtag->Text4
+                                ]),
+                                "levelName" => $t->namedtag->hideAndSeekSignData->level ?? $t->namedtag->hideAndSeekSignData->levelName,
+                                "level" => $t->namedtag->hideAndSeekSignData->level ?? $t->namedtag->hideAndSeekSignData->levelName // Sometimes, there is no way to know why things like that works...
                            ]);
                        }
                        $line1 = $this->parse((string) $t->namedtag->hideAndSeekSignData->model[1], $t);
@@ -66,11 +72,14 @@ class Task1 extends PluginTask {
     @return string
     */
     public function parse(string $string, Sign $sign) : string {
-        $game = $this->main->getGameManager()->getGameByName($sign->namedtag->hideAndSeekSignData->level);
-        $str = str_ireplace("{world}", $sign->namedtag->hideAndSeekSignData->level);
-        $str = str_ireplace("{maxp}", $game->getMaxPlayers());
-        $str = str_ireplace("{pls}", count($game->getPlayers()));
-        $str = str_ireplace("{world}", $sign->namedtag->hideAndSeekSignData->level);
+        safe_var_dump($sign->namedtag->hideAndSeekSignData->getValue());
+        $game = $this->main->getGameManager()->getGameByName($sign->namedtag->hideAndSeekSignData->levelName ?? $sign->namedtag->hideAndSeekSignData->level);
+        $str = str_ireplace("{world}", $sign->namedtag->hideAndSeekSignData->offsetGet("levelName"), $string);
+        $str = str_ireplace("{maxp}", $game->getMaxPlayers(), $str);
+        $str = str_ireplace("{pls}", count($game->getPlayers()), $str);
+        $str = str_ireplace("{step}", $game->step, $str);
+        $str = str_ireplace("{playing}", ($game->step == Game::STEP_WAIT || $game->step == Game::STEP_START) ? "Waiting" : "Starting", $str);
+        return $str;
     }
 
 

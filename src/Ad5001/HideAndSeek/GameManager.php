@@ -144,6 +144,8 @@ class GameManager {
                 if(is_null($row["name"])) return;
                 if(is_null($this->gamesName[$row["name"]]) && ($lvl = $this->getMain()->getServer()->getLevelByName($row["name"])) !== null) { // Game doesn't exists && level is loaded
                     $this->games[$row["Id"]] = new Game($lvl);
+                    $this->getMain()->getServer()->getPluginManager()->registerEvents($this->games[$row["Id"]] ,$this->getMain());
+                    $this->getMain()->getServer()->getScheduler()->scheduleRepeatingTask($this->games[$row["Id"]], 1);
                     $this->gamesNames[$row["name"]] = $row["Id"];
                     $this->getMain()->getLogger()->notice("Succefully registered game level {$row['name']}.");
                 }

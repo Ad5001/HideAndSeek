@@ -25,11 +25,11 @@ use Ad5001\HideAndSeek\GameManager;
 
 class Game extends PluginTask /* Allows easy game running */ implements Listener {
 
-    const STEP_WAIT = 0;
-    const STEP_START = 1;
-    const STEP_HIDE = 2;
-    const STEP_SEEK = 3;
-    const STEP_WIN = 4;
+    const STEP_WAIT = "WAITING";
+    const STEP_START = "STARTING";
+    const STEP_HIDE = "HIDING";
+    const STEP_SEEK = "SEEKING";
+    const STEP_WIN = "RESTARTING";
 
     const NO_WIN = 0;
     const WIN_SEEKERS = 1;
@@ -80,6 +80,7 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
     public function onRun($tick) {
         switch($this->step) {
             case self::STEP_WAIT:
+            // $this->getMain()->getLogger()->debug("Running game " . $this->getName() . " at wait step");
             if(count($this->getPlayers()) >= round($this->getMaxPlayers() * 0.75)) {
                 $this->stepTick = $tick;
                 $this->step = self::STEP_START;
@@ -89,6 +90,7 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
             }
             break;
             case self::STEP_START:
+            // $this->getMain()->getLogger()->debug("Running game " . $this->getName() . " at start step");
             $tickWaited = $tick - $this->stepTick;
             if($tickWaited % 20 == 0) {
                 foreach(array_merge($this->getPlayers(), $this->getSpectators()) as $p) {
@@ -100,7 +102,7 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
                 foreach(array_merge($this->getPlayers(), $this->getSpectators()) as $p) {
                     $p->sendMessage(Main::PREFIX . "§aGame started ! There is $this->seekersCount seekers and $this->hidersLeft hiders.");
                     if($p->HideAndSeekRole == self::ROLE_SEEK) {
-                        $p->teleport($this->getSeekerSpawn());
+                        $p->teleport($this->getSeekersSpawn());
                     } elseif($p->HideAndSeekRole == self::ROLE_HIDE) {
                         $p->teleport($this->getSpawn());
                         $p->sendPopup("§lHider: You have 1 minute to hide yourself so seekers won't find you ! Don't get caught for " . $this->getSeekTime() . " minutes to win !");
@@ -109,6 +111,7 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
             }
             break;
             case self::STEP_HIDE:
+            // $this->getMain()->getLogger()->debug("Running game " . $this->getName() . " at hide step");
             $tickWaited = $tick - $this->stepTick;
             if($tickWaited >= 20*60) { // One minute has past !
                 $this->step = self::STEP_SEEK;
@@ -117,14 +120,15 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
                     $p->sendMessage(Main::PREFIX . "§aSeekers released !");
                     if($p->HideAndSeekRole == self::ROLE_SEEK) {
                         $p->teleport($this->getSpawn());
-                        $p->sendPopup("§lSeeker: Seek the hiders ! Catch them all to win in " . $this->getSeekTime() . " minutes to win !");
+                        $p->sendMessage("§lSeeker: Seek the hiders ! Catch them all to win in " . $this->getSeekTime() . " minutes to win !");
                     }
                 }
             }
             break;
             case self::STEP_SEEK:
+            // $this->getMain()->getLogger()->debug("Running game " . $this->getName() . " at seek step");
             $tickWaited = $tick - $this->stepTick;
-            if($tickWaited % 20*60 == 0) {
+            if($tickWaited % (20*60) == 0) {
                 foreach(array_merge($this->getPlayers(), $this->getSpectators()) as $p) {
                     $p->sendMessage(Main::PREFIX . "§aGame ends in " . ($this->getSeekTime() - ($tickWaited / 20 / 60)) . " minutes.");
                 }
@@ -135,6 +139,7 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
             }
             break;
             case self::STEP_WIN:
+            // $this->getMain()->getLogger()->debug("Running game " . $this->getName() . " at win step");
             foreach(array_merge($this->getPlayers(), $this->getSpectators()) as $p) {
                 if($this->win == self::WIN_SEEKERS) {
                     $p->sendMessage(Main::PREFIX . "§aThe last hider got caught ! Seekers won !");
@@ -148,6 +153,7 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
                 $p->teleport($this->getMain()->getLobbyWorld()->getSafeSpawn());
                 $p->setGamemode($this->getMain()->getServer()->getDefaultGamemode());
             }
+            $this->players = [];
             $this->step = self::STEP_WAIT;
             break;
         }
@@ -190,7 +196,8 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
     public function start() {
         $this->stepTick = $this->getMain()->getServer()->getTick();
         $count = count($this->players);
-        $this->seekersCount = round($count * ($this->getSeekersPercentage() / 100), 0, PHP_ROUND_HALF_UP); // Minimum $this->getSeekersPercentage() percents of the players (inimum because if there are less than $this->getSeekersPercentage(), then there could be no seeker)
+        $this->step = self::STEP_HIDE;
+        $this->seekersCount = ceil($count * ($this->getSeekersPercentage() / 100)); // Minimum $this->getSeekersPercentage() percents of the players (inimum because if there are less than $this->getSeekersPercentage(), then there could be no seeker)
         $this->hidersLeft = count($this->players) - $this->seekersCount;
 
         shuffle($this->players);
@@ -223,7 +230,7 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
     Returns seekers spawn (waiting hiders to hide + startup)
     @return \pocketmine\math\Vector3 
     */
-    public function getSeekerSpawn() : Vector3 {
+    public function getSeekersSpawn() : Vector3 {
         $data = $this->getMain()->getDatabase()->get("seekerspawn", ["table" => "Games", "name" => $this->getName()])->fetchArray()[0];
         $data = explode(",", $data);
         if(!isset($data[1])) return $this->getLevel()->getSafeSpawn();
@@ -322,6 +329,22 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
     public function getSeekersPercentage() : int {
         return (int) $this->getMain()->getDatabase()->get("seekers_percentage", ["table" => "Games", "name" => $this->getName()])->fetchArray()[0];
     }
+
+    /*
+    Returns the current number of seekers
+    @return int
+    */
+    public function getSeekersCount() : int {
+        return $this->seekersCount;
+    }
+
+    /*
+    Returns the current number of seekers
+    @return int
+    */
+    public function getHidersLeft() : int {
+        return $this->hidersLeft;
+    }
     
     // SET
 
@@ -338,7 +361,7 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
     Sets the seeker spawn. Check get for more details.
     @param     $v3    Vector3
     */
-    public function setSeekerSpawn(Vector3 $v3) {
+    public function setSeekersSpawn(Vector3 $v3) {
         $str = $v3->x . "," . $v3->y . "," . $v3->z;
         return $this->getMain()->getDatabase()->set("seekerspawn", $str, ["table" => "Games", "name" => $this->getName()])->fetchArray()[0];
     }
@@ -394,14 +417,13 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
              $this->getMain()->getServer()->getPluginManager()->getPlugin("SpectatorPlus")->isSpectator($player)))  { // Support for spectator Plus
                  $this->spectators[$player->getName()] = $player;
                  $player->HideAndSeekRole = self::ROLE_SPECTATE;
-        } elseif($this->step == self::STEP_WAIT || $this->step == self::STEP_START) {
+        } elseif($this->step == self::STEP_WAIT || $this->step == self::STEP_START) {$player->hideAndSeekGame = $this;
             // API inside player's class (easilier to get data)
-            $this->sendMessage("§a" . $player->getName() . " joined (" . count($this->players) . "/" . $this->getMaxPlayers() . "). " . (count($this->players) - round($this->getMaxPlayers() * 0.75)) . "players left before starting");
-            $player->hideAndSeekGame = $this;
             $player->HideAndSeekRole = self::ROLE_WAIT;
             $player->playsHideAndSeek = true;
             $this->players[$player->getName()] = $player;
             $player->setGamemode(2); // Set it to adventure so player cannot break blocks.
+            $this->sendMessage("§a" . $player->getName() . " joined (" . count($this->players) . "/" . $this->getMaxPlayers() . "). " . (count($this->players) - round($this->getMaxPlayers() * 0.75)) . "players left before starting");
         } else {
             $this->spectators[$player->getName()] = $player;
             $player->HideAndSeekRole = self::ROLE_SPECTATE;
@@ -420,6 +442,7 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
             $this->sendMessage($player->getName() . " left the game. $this->seekersCount seekers left.");
             unset($this->players[$player->getName()]);
             unset($player->hideAndSeekGame);
+            unset($player->HideAndSeekRole);
             unset($player->playsHideAndSeek);
             if($this->seekersCount == 0) {
                 $this->step = self::STEP_WIN;
@@ -431,6 +454,7 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
             $this->sendMessage($player->getName() . " left the game. $this->hidersLeft hiders left.");
             unset($this->players[$player->getName()]);
             unset($player->hideAndSeekGame);
+            unset($player->HideAndSeekRole);
             unset($player->playsHideAndSeek);
             if($this->hidersLeft == 0) {
                 $this->step = self::STEP_WIN;
@@ -484,13 +508,25 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
             $this->unregisterPlayer($event->getEntity());
         }
     }
+    
+    /*
+    Checks when a seeker moves when he shouldn't.
+    @param     $event    \pocketmine\event\player\PlayerMoveEvent
+    */
+    public function onPlayerMove(\pocketmine\event\player\PlayerMoveEvent $event) {
+        if($event->getPlayer()->getLevel()->getName() == $this->getName()) {
+            if($event->getPlayer()->HideAndSeekRole == self::ROLE_SEEK && $this->step == self::STEP_HIDE) {
+                $event->setCancelled();
+            }
+        }
+    }
 
     /*
     Checks when a block breaks to prevent it.
     @param     $event    \pocketmine\event\block\BlockBreakEvent
     */
     public function onBlockBreak(\pocketmine\event\block\BlockBreakEvent $event) {
-        if($event->getBlock()->getLevel()->getLevel() == $this->getName()) {
+        if($event->getBlock()->getLevel()->getName() == $this->getName()) {
             $event->setCancelled();
         }
     }
@@ -500,7 +536,7 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
     @param     $event    \pocketmine\event\block\BlockPlaceEvent
     */
     public function onBlockPlace(\pocketmine\event\block\BlockPlaceEvent $event) {
-        if($event->getBlock()->getLevel()->getLevel() == $this->getName()) {
+        if($event->getBlock()->getLevel()->getName() == $this->getName()) {
             $event->setCancelled();
         }
     }
@@ -511,7 +547,8 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
     @param     $event    \pocketmine\event\entity\EntityDamageEvent
     */
     public function onEntityDamage(\pocketmine\event\entity\EntityDamageEvent $event) {
-        if($event->getEntity()->getLevel() == $this->getName()) {
+        if($event->getEntity()->getLevel()->getName() == $this->getName()) {
+            $this->getMain()->getLogger()->debug("Cancelling game hit: " . $this->getName());
             if($event instanceof \pocketmine\event\entity\EntityDamageByEntityEvent
             && $event->getEntity() instanceof Player 
             && $event->getDamager() instanceof Player
@@ -530,7 +567,7 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
     @param     $event    \pocketmine\event\player\PlayerDeathEvent
     */
     public function onPlayerDeath(\pocketmine\event\player\PlayerDeathEvent $event) {
-        if($event->getPlayer()->getLevel() == $this->getName()) {
+        if($event->getPlayer()->getLevel()->getName() == $this->getName()) {
             $event->setCancelled();
         }
     }
@@ -542,7 +579,7 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
     @param     $event    \pocketmine\event\player\PlayerJoinEvent
     */
     public function onPlayerJoin(\pocketmine\event\player\PlayerJoinEvent $event) {
-        if($event->getPlayer()->getLevel() == $this->getName()) {
+        if($event->getPlayer()->getLevel()->getName() == $this->getName()) {
             $this->registerPlayer($event->getPlayer());
         }
     }
@@ -552,7 +589,7 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
     @param     $event    \pocketmine\event\player\PlayerQuitEvent
     */
     public function onPlayerQuit(\pocketmine\event\player\PlayerQuitEvent $event) {
-        if($event->getPlayer()->getLevel() == $this->getName()) {
+        if($event->getPlayer()->getLevel()->getName() == $this->getName()) {
             $this->unregisterPlayer($event->getPlayer());
         }
     }
