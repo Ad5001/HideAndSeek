@@ -27,7 +27,19 @@ Seeking time: 3
 # Percentage of the players that will be seekers.
 Seekers percentage: 10
 
+
+
 # Parameters below are set for every game and are not changable by commands
 # The world players should be tped to when the game ends.
 Lobby world: world
+
+# Command, use {player} to change it into the selected player username !
+# This is the command to be executed as console for all the players that won (original seekers if seekers wins / hiders left if hiders wins)
+Winners command: give {player} diamond 1
+
+# This is the command that will be executed for all the people that have lost (seekers if they lost / seekers that were hiders)
+Losers command: give {player} dirt 64
+
+# This will be executed for hiders that have been caught if seekers wins.
+Semi winners command: give {player} iron_ingot
 ...

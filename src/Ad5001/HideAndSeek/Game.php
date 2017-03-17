@@ -19,6 +19,7 @@ use pocketmine\level\Level;
 use pocketmine\event\Listener;
 use pocketmine\math\Vector3;
 use pocketmine\scheduler\PluginTask;
+use pocketmine\command\ConsoleCommandSender;
 
 use Ad5001\HideAndSeek\Main;
 use Ad5001\HideAndSeek\GameManager;
@@ -38,7 +39,8 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
     const ROLE_WAIT = 0;
     const ROLE_SEEK = 1;
     const ROLE_HIDE = 2;
-    const ROLE_SPECTATE = 2;
+    const ROLE_NEW_SEEK = 3;
+    const ROLE_SPECTATE = 4;
 
     // Level based informations
     protected $level;
@@ -147,9 +149,29 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
                 if($this->win == self::WIN_SEEKERS) {
                     $p->sendMessage(Main::PREFIX . "§aThe last hider got caught ! Seekers won !");
                     $p->sendTip("§a§lSeekers won !");
+                    swicth($p->HideAndSeekRole) {
+                        case self::ROLE_HIDE:
+                        $this->getMain()->getServer()->dispatchCommand(new ConsoleCommandSencer(), $this->getMain()->getConfig()->get("Losers command"));
+                        break;
+                        case self::ROLE_NEW_SEEK:
+                        $this->getMain()->getServer()->dispatchCommand(new ConsoleCommandSencer(), $this->getMain()->getConfig()->get("Semi winners command"));
+                        break;
+                        case self::ROLE_SEEK:
+                        $this->getMain()->getServer()->dispatchCommand(new ConsoleCommandSencer(), $this->getMain()->getConfig()->get("Winners command"));
+                        break;
+                    }
                 } elseif($this->win == self::WIN_HIDERS) {
                     $p->sendMessage(Main::PREFIX . "§aTimes up ! Hiders won !");
                     $p->sendTip("§a§lHiders won !");
+                    swicth($p->HideAndSeekRole) {
+                        case self::ROLE_SEEK:
+                        case self::ROLE_NEW_SEEK:
+                        $this->getMain()->getServer()->dispatchCommand(new ConsoleCommandSencer(), $this->getMain()->getConfig()->get("Losers command"));
+                        break;
+                        case self::ROLE_HIDE:
+                        $this->getMain()->getServer()->dispatchCommand(new ConsoleCommandSencer(), $this->getMain()->getConfig()->get("Winners command"));
+                        break;
+                    }
                 } else {
                     $p->sendMessage(Main::PREFIX . "§aGame cancelled !");
                 }
@@ -427,7 +449,7 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
             $player->playsHideAndSeek = true;
             $this->players[$player->getName()] = $player;
             $player->setGamemode(2); // Set it to adventure so player cannot break blocks.
-            $this->sendMessage("§a" . $player->getName() . " joined (" . count($this->players) . "/" . $this->getMaxPlayers() . "). " . (count($this->players) - round($this->getMaxPlayers() * 0.75)) . "players left before starting");
+            $this->sendMessage("§a" . $player->getName() . " joined (" . count($this->players) . "/" . $this->getMaxPlayers() . "). " . (round($this->getMaxPlayers() * 0.75) - count($this->players)) . " players left before starting");
         } else {
             $this->spectators[$player->getName()] = $player;
             $player->HideAndSeekRole = self::ROLE_SPECTATE;
@@ -556,8 +578,8 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
             if($event instanceof \pocketmine\event\entity\EntityDamageByEntityEvent
             && $event->getEntity() instanceof Player 
             && $event->getDamager() instanceof Player
-            && (isset($event->getDamager()->HideAndSeekRole) ? $event->getDamager()->HideAndSeekRole : -1) == self::ROLE_SEEK
-            && (isset($event->getEntity()->HideAndSeekRole) ? $event->getEntity()->HideAndSeekRole : -1) == self::ROLE_HIDE) { // Tagging
+            && ($event->getDamager()->HideAndSeekRole : -1) == self::ROLE_SEEK || $event->getDamager()->HideAndSeekRole : -1) == self::ROLE_NEW_SEEK)
+            && $event->getEntity()->HideAndSeekRole : -1) == self::ROLE_HIDE) { // Tagging
                 $this->hidersLeft--;
                 $event->getEntity()->HideAndSeekRole = self::ROLE_SEEK;
                 $event->getEntity()->teleport($this->getSpawn());
@@ -566,6 +588,7 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
                     $this->step = self::STEP_WIN;
                     $this->win = self::WIN_SEEKERS;
                 } else {
+                    $event->getEntity()->HideAndSeekRole = self::ROLE_NEW_SEEK;
                     $event->getEntity()->sendMessage(Main::PREFIX . "§aYou're now a seeker!");
                     $event->getEntity()->sendMessage("§lSeeker: Seek the hiders ! Catch them all to win in " . $this->getSeekTime() . " minutes to win !");
                 }
