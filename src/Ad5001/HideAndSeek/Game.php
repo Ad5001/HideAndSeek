@@ -149,7 +149,7 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
                 if($this->win == self::WIN_SEEKERS) {
                     $p->sendMessage(Main::PREFIX . "§aThe last hider got caught ! Seekers won !");
                     $p->sendTip("§a§lSeekers won !");
-                    swicth($p->HideAndSeekRole) {
+                    switch($p->HideAndSeekRole) {
                         case self::ROLE_HIDE:
                         $this->getMain()->getServer()->dispatchCommand(new ConsoleCommandSencer(), $this->getMain()->getConfig()->get("Losers command"));
                         break;
@@ -163,7 +163,7 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
                 } elseif($this->win == self::WIN_HIDERS) {
                     $p->sendMessage(Main::PREFIX . "§aTimes up ! Hiders won !");
                     $p->sendTip("§a§lHiders won !");
-                    swicth($p->HideAndSeekRole) {
+                    switch($p->HideAndSeekRole) {
                         case self::ROLE_SEEK:
                         case self::ROLE_NEW_SEEK:
                         $this->getMain()->getServer()->dispatchCommand(new ConsoleCommandSencer(), $this->getMain()->getConfig()->get("Losers command"));
