@@ -20,6 +20,7 @@ use pocketmine\event\Listener;
 use pocketmine\math\Vector3;
 use pocketmine\scheduler\PluginTask;
 use pocketmine\command\ConsoleCommandSender;
+use pocketmine\item\Item;
 
 use Ad5001\HideAndSeek\Main;
 use Ad5001\HideAndSeek\GameManager;
@@ -82,7 +83,6 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
     public function onRun($tick) {
         switch($this->step) {
             case self::STEP_WAIT:
-            // $this->getMain()->getLogger()->debug("Running game " . $this->getName() . " at wait step");
             if(count($this->getPlayers()) >= round($this->getMaxPlayers() * 0.75)) {
                 $this->stepTick = $tick;
                 $this->step = self::STEP_START;
@@ -92,7 +92,6 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
             }
             break;
             case self::STEP_START:
-            // $this->getMain()->getLogger()->debug("Running game " . $this->getName() . " at start step");
             $tickWaited = $tick - $this->stepTick;
             if($tickWaited % 20 == 0) {
                 foreach(array_merge($this->getPlayers(), $this->getSpectators()) as $p) {
@@ -106,6 +105,8 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
                     if($p->HideAndSeekRole == self::ROLE_SEEK) {
                         $p->teleport($this->getSeekersSpawn());
                     } elseif($p->HideAndSeekRole == self::ROLE_HIDE) {
+                        $p->setNameTagAlwaysVisible(false);
+                        $p->setNameTagVisible(false);
                         $p->teleport($this->getSpawn());
                         $p->sendPopup("§lHider: You have 1 minute to hide yourself so seekers won't find you ! Don't get caught for " . $this->getSeekTime() . " minutes to win !");
                     }
@@ -113,10 +114,9 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
             }
             break;
             case self::STEP_HIDE:
-            // $this->getMain()->getLogger()->debug("Running game " . $this->getName() . " at hide step");
             $tickWaited = $tick - $this->stepTick;
             if($tickWaited % (20*10) == 0) {
-                $this->sendMessage("§aSeekers will be released in " . (60 - ($this->tickwaited / 20)) . " seconds !");
+                $this->sendMessage("§aSeekers will be released in " . (60 - ($tickWaited / 20)) . " seconds !");
             }
             if($tickWaited >= 20*60) { // One minute has past !
                 $this->step = self::STEP_SEEK;
@@ -131,11 +131,10 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
             }
             break;
             case self::STEP_SEEK:
-            // $this->getMain()->getLogger()->debug("Running game " . $this->getName() . " at seek step");
             $tickWaited = $tick - $this->stepTick;
             if($tickWaited % (20*60) == 0) {
                 foreach(array_merge($this->getPlayers(), $this->getSpectators()) as $p) {
-                    $p->sendMessage(Main::PREFIX . "§aGame ends in " . ($this->getSeekTime() - ($this->tickWaited / 20 / 60)) . " minutes.");
+                    $p->sendMessage(Main::PREFIX . "§aGame ends in " . ($this->getSeekTime() - ($tickWaited / 20 / 60)) . " minutes.");
                 }
             }
             if($tickWaited >= 20*60*$this->getSeekTime()) { // Seek time has past 
@@ -144,20 +143,19 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
             }
             break;
             case self::STEP_WIN:
-            // $this->getMain()->getLogger()->debug("Running game " . $this->getName() . " at win step");
             foreach(array_merge($this->getPlayers(), $this->getSpectators()) as $p) {
                 if($this->win == self::WIN_SEEKERS) {
                     $p->sendMessage(Main::PREFIX . "§aThe last hider got caught ! Seekers won !");
                     $p->sendTip("§a§lSeekers won !");
                     switch($p->HideAndSeekRole) {
                         case self::ROLE_HIDE:
-                        $this->getMain()->getServer()->dispatchCommand(new ConsoleCommandSencer(), $this->getMain()->getConfig()->get("Losers command"));
+                        $this->getMain()->getServer()->dispatchCommand(new ConsoleCommandSender(), $this->getMain()->getConfig()->get("Losers command"));
                         break;
                         case self::ROLE_NEW_SEEK:
-                        $this->getMain()->getServer()->dispatchCommand(new ConsoleCommandSencer(), $this->getMain()->getConfig()->get("Semi winners command"));
+                        $this->getMain()->getServer()->dispatchCommand(new ConsoleCommandSender(), $this->getMain()->getConfig()->get("Semi winners command"));
                         break;
                         case self::ROLE_SEEK:
-                        $this->getMain()->getServer()->dispatchCommand(new ConsoleCommandSencer(), $this->getMain()->getConfig()->get("Winners command"));
+                        $this->getMain()->getServer()->dispatchCommand(new ConsoleCommandSender(), $this->getMain()->getConfig()->get("Winners command"));
                         break;
                     }
                 } elseif($this->win == self::WIN_HIDERS) {
@@ -166,10 +164,10 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
                     switch($p->HideAndSeekRole) {
                         case self::ROLE_SEEK:
                         case self::ROLE_NEW_SEEK:
-                        $this->getMain()->getServer()->dispatchCommand(new ConsoleCommandSencer(), $this->getMain()->getConfig()->get("Losers command"));
+                        $this->getMain()->getServer()->dispatchCommand(new ConsoleCommandSender(), $this->getMain()->getConfig()->get("Losers command"));
                         break;
                         case self::ROLE_HIDE:
-                        $this->getMain()->getServer()->dispatchCommand(new ConsoleCommandSencer(), $this->getMain()->getConfig()->get("Winners command"));
+                        $this->getMain()->getServer()->dispatchCommand(new ConsoleCommandSender(), $this->getMain()->getConfig()->get("Winners command"));
                         break;
                     }
                 } else {
@@ -482,6 +480,8 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
             unset($player->hideAndSeekGame);
             unset($player->HideAndSeekRole);
             unset($player->playsHideAndSeek);
+            $player->setNameTagVisible(true);
+            $player->setNameTagAlwaysVisible(true);
             if($this->hidersLeft == 0) {
                 $this->step = self::STEP_WIN;
                 $this->win = self::WIN_SEEKERS;
@@ -491,6 +491,8 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
             unset($this->players[$player->getName()]);
             unset($player->hideAndSeekGame);
             unset($player->playsHideAndSeek);
+            $player->setNameTagVisible(true); // Game ending.
+            $player->setNameTagAlwaysVisible(true);
             break;
             case self::ROLE_SPECTATE:
             unset($this->spectators[$player->getName()]);
@@ -578,8 +580,8 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
             if($event instanceof \pocketmine\event\entity\EntityDamageByEntityEvent
             && $event->getEntity() instanceof Player 
             && $event->getDamager() instanceof Player
-            && ($event->getDamager()->HideAndSeekRole : -1) == self::ROLE_SEEK || $event->getDamager()->HideAndSeekRole : -1) == self::ROLE_NEW_SEEK)
-            && $event->getEntity()->HideAndSeekRole : -1) == self::ROLE_HIDE) { // Tagging
+            && ($event->getDamager()->HideAndSeekRole == self::ROLE_SEEK || $event->getDamager()->HideAndSeekRole == self::ROLE_NEW_SEEK)
+            && $event->getEntity()->HideAndSeekRole == self::ROLE_HIDE) { // Tagging
                 $this->hidersLeft--;
                 $event->getEntity()->HideAndSeekRole = self::ROLE_SEEK;
                 $event->getEntity()->teleport($this->getSpawn());
@@ -589,6 +591,7 @@ class Game extends PluginTask /* Allows easy game running */ implements Listener
                     $this->win = self::WIN_SEEKERS;
                 } else {
                     $event->getEntity()->HideAndSeekRole = self::ROLE_NEW_SEEK;
+                    $player->setNameTagVisible(true);
                     $event->getEntity()->sendMessage(Main::PREFIX . "§aYou're now a seeker!");
                     $event->getEntity()->sendMessage("§lSeeker: Seek the hiders ! Catch them all to win in " . $this->getSeekTime() . " minutes to win !");
                 }
