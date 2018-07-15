@@ -1,3 +1,4 @@
+## This repository was moved to [git.ad5001.eu](https://git.ad5001.eu/Ad5001/HideAndSeek)
 # HideAndSeek
 The original minigame, free, and better than ever !     
 
